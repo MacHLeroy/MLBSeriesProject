@@ -13,7 +13,7 @@ import plotly.express as px
 import plotly.graph_objects as go
 import plotly.figure_factory as ff
 import plotly.io as pio
-import chart_studio
+#import chart_studio
 import streamlit as st
 
 st.set_page_config(layout="wide")
