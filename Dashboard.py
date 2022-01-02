@@ -17,9 +17,14 @@ import plotly.io as pio
 import streamlit as st
 
 st.set_page_config(layout="wide")
+wide_width = 1250
+half_width = wide_width/2 -100
+plot_height = 450
+table_height = 750
 
 #title
 st.title('Baseball Dashboard')
+
 
 
 
@@ -145,6 +150,7 @@ data_load_state.text("Data Loaded!")
 
 
 
+
 def getTeamAndYears(Team, start_year = None, end_year = None, historical_results = True, AsHelperFunction = False):
     
     if historical_results:
@@ -192,14 +198,25 @@ def getTeamAndYears(Team, start_year = None, end_year = None, historical_results
     
     
     if AsHelperFunction == False:
-        table = ff.create_table(Results)
-        table.update_layout(width=1450)
-        
+
+        table = go.Figure(data=[go.Table(
+            header=dict(values=list(Results.columns)),
+            cells=dict(values=[Results.Team, Results.Year, Results.NumberOfGames, Results.Wins,
+                                Results.Losses, Results.NumberOfSeries, Results.SeriesWins, Results.SeriesLosses,
+                                Results.SeriesTies, Results.WinPercent, Results.SeriesWinPercent]))
+
+])
+       
+        table.update_layout(width=wide_width, height = table_height)
     
         return table
     
     else:
         return Results
+
+        
+
+    
 
 
 def getTeamAndYearsPlot(Team, start_year = None, end_year = None, historical_results = True, AsHelperFunction = False):
@@ -217,7 +234,7 @@ def getTeamAndYearsPlot(Team, start_year = None, end_year = None, historical_res
                 line_color = '#2ca02c'))
         fig.add_hline(y=0.5, line_color = 'Red')
         fig.update_yaxes(range = [.2,.8])  
-        fig.update_layout(width=1450)
+        fig.update_layout(width=wide_width)
     return fig
     
 def getSeasonHelperFunction(Team, Year):
@@ -247,8 +264,18 @@ def getOneYearResultsFull(Team, Year, plot = False):
         df.loc['-'] = spacer_row
         df = pd.concat([df, playoff_df], ignore_index=False)
         
-    table = ff.create_table(df)
-    table.update_layout(width=1450)
+    table = go.Figure(data=[go.Table(
+        header=dict(values=list(df.columns)),
+
+        cells=dict(values=[df.Home_Team, df.Home_Team_Score, df.Away_Team, df.Away_Team_Score,
+                                df.Date, df.Winner, df.Team_Winner, df.Cumultive_Wins, df.WinPercent]))
+
+])
+       
+    table.update_layout(width=wide_width, height = table_height)
+    
+    
+
     
     return table
 
@@ -288,17 +315,7 @@ def getOneYearRegularSeason(Team, Year, Plot = True, AsHelper = False):
         df = df.drop(columns = ['index', 'level_0', 'Home_FranID', 'Away_FranID'])
     
 
-        if Plot == True:
-            regSeasonBarCharts(Result, Year)
-                
-            
-            fig3 = go.Figure()
-            fig3.add_trace(go.Scatter(x=df.Date, y=df.WinPercent,
-                mode='lines',
-                name='Win Percent'))
-            fig3.add_hline(y=0.5, line_color = 'Red')
-            fig3.update_yaxes(range = [.1,.9], title = 'Win Percentage')
-            fig3.show()
+
             
  
             
@@ -308,7 +325,15 @@ def getOneYearRegularSeason(Team, Year, Plot = True, AsHelper = False):
             
         df.Date = pd.DatetimeIndex(df.Date).strftime("%m-%d-%Y")
         if AsHelper == False:
-            table = ff.create_table(df)
+            table = go.Figure(data=[go.Table(
+                header=dict(values=list(df.columns)),
+
+                cells=dict(values=[df.Home_Team, df.Home_Team_Score, df.Away_Team, df.Away_Team_Score,
+                                df.Date, df.Winner, df.Team_Winner, df.Cumultive_Wins, df.WinPercent]))
+
+])
+       
+            table.update_layout(width=wide_width, height = table_height)
             return table
         else: return df
 
@@ -354,9 +379,17 @@ def getOneYearPlayoffs(Team, Year, AsHelper = False):
         
         #playoff_df.Date = pd.DatetimeIndex(playoff_df.Date).strftime("%m-%d-%Y")
         
+
         if AsHelper == False:
-            table = ff.create_table(playoff_df)
-    
+            table = go.Figure(data=[go.Table(
+                header=dict(values=list(playoff_df.columns)),
+
+                cells=dict(values=[playoff_df.Home_Team, playoff_df.Home_Team_Score, playoff_df.Away_Team, playoff_df.Away_Team_Score,
+                                playoff_df.Date, playoff_df.Winner, playoff_df.Team_Winner, playoff_df.Cumultive_Wins, playoff_df.WinPercent]))
+
+])
+       
+            table.update_layout(width=wide_width, height = table_height)
             return table
     
         else:
@@ -429,7 +462,7 @@ def getBarChart1(Team, Year):
     xaxis=dict(title_text="Regular Season Results "),
     yaxis=dict(title_text="Percent"),
     barmode="stack",
-    width = 650,
+    width = half_width,
     )
     
 
@@ -474,7 +507,7 @@ def getBarChart2(Team, Year):
     xaxis=dict(title_text="Regular Season Results "),
     yaxis=dict(title_text="Count"),
     barmode="stack",
-    width = 650,
+    width = half_width,
     )
     
     if Team in color_dictionary:
@@ -505,7 +538,7 @@ def getOneYearPlot(Team, Year):
     fig.add_trace(go.Scatter(x=df.Date, y=df.WinPercent, mode='lines', name='Win Percent'))
     fig.add_hline(y=0.5, line_color = 'Red')
     fig.update_yaxes(range = [.1,.9], title = 'Win Percentage')
-    fig.update_layout(width = 1450, height = 450)
+    fig.update_layout(width = wide_width, height = plot_height)
     return fig
 
 st.write('Introduction')
