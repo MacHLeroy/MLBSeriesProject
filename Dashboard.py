@@ -15,6 +15,7 @@ All of which can be found on GitHub (github.com/MacHLeroy)
 """
 
 # ----Imports------------------------------------
+from turtle import title
 import numpy as np
 import pandas as pd
 import sys
@@ -181,7 +182,7 @@ workingdf = load_data2()
 PostSeasonMarkerDF = load_data3()
 MasterYearlyResultsWithPlayoffs = load_data4()
 
-data_load_state.text("Data Loaded!")
+data_load_state.text("")
 
 
 # ------- Define Functions ----------------------------------------------------------------------------------
@@ -261,14 +262,19 @@ def getTeamAndYears(Team, start_year = None, end_year = None, historical_results
     Results['SeriesWinPercent'] = Results['SeriesWinPercent'].round(decimals = 3) 
     
     
+    
     #If not being used as a helper function, default is to build and return a table of results
     if AsHelperFunction == False:
+        Results = Results.rename(columns = {'NumberOfSeries':'Number of Series', 'NumberOfGames':'Number of Games', 'SeriesWins': 'Series Wins', 'SeriesLosses':'Series Losses',
+                            'SeriesTies': 'Series Ties', 'WinPercent':'Win Percent', 'SeriesWinPercent':'Series Win Percent' })
 
         table = go.Figure(data=[go.Table(
-            header=dict(values=list(Results.columns)),
-            cells=dict(values=[Results.Team, Results.Year, Results.NumberOfGames, Results.Wins,
-                                Results.Losses, Results.NumberOfSeries, Results.SeriesWins, Results.SeriesLosses,
-                                Results.SeriesTies, Results.WinPercent, Results.SeriesWinPercent]))
+            header=dict(values=list(Results.columns), 
+                        font=dict(color='black')),
+            cells=dict(values=[Results['Team'], Results['Year'], Results['Number of Games'], Results['Wins'],
+                                Results['Losses'], Results['Number of Series'], Results['Series Wins'], Results['Series Losses'],
+                                Results['Series Ties'], Results['Win Percent'], Results['Series Win Percent']], 
+                        font=dict(color='black')))
 
 ])
        
@@ -317,8 +323,9 @@ def getTeamAndYearsPlot(Team, start_year = None, end_year = None, historical_res
             name='Win Percent',
             line_color = '#2ca02c'))
     fig.add_hline(y=0.5, line_color = 'Red')
-    fig.update_yaxes(range = [.2,.8])  
-    fig.update_layout(width=wide_width)
+    fig.update_yaxes(range = [.2,.8], title="Win Percent") 
+    fig.update_xaxes(title="Year") 
+    fig.update_layout(width=wide_width, title = "Overall Win Percent and Series Win Percent by Year")
     return fig
 
     
@@ -376,7 +383,7 @@ def getOneYearResultsFull(Team, Year):
     -------
     Plotly table of full season results (regular season and playoffs). 
     Dataframe columns: Home Team, Home Team Score, Away Team, Away Team Score, Date, Winner, 
-    Team Winner (Did team of interest win), Cumultive Wins, Win Percentage to date
+    Team Winner (Did team of interest win), Cumulative Wins, Win Percentage to date
 
     """
     
@@ -398,13 +405,17 @@ def getOneYearResultsFull(Team, Year):
         df = pd.concat([df, playoff_df], ignore_index=False)
     
     #create table
+    df = df.rename(columns = {'Home_Team': 'Home Team', 'Home_Team_Score': 'Home Team Score', 'Away_Team': 'Away Team', 'WinPercent': 'Win Percent',
+                            'Away_Team_Score': 'Away Team Score', 'Team_Winner': 'Result', 'Cumulative_Wins':'Cumulative Wins'})
+    df= df.replace({'Result': {True: 'Win', False: 'Loss'}})
+
     table = go.Figure(data=[go.Table(
-        header=dict(values=list(df.columns)),
+        header=dict(values=list(df.columns),
+                    font=dict(color='black')),
 
-        cells=dict(values=[df.Home_Team, df.Home_Team_Score, df.Away_Team, df.Away_Team_Score,
-                                df.Date, df.Winner, df.Team_Winner, df.Cumultive_Wins, df.WinPercent]))
-
-    ])
+        cells=dict(values=[df['Home Team'], df['Home Team Score'], df['Away Team'], df['Away Team Score'],
+                                df['Date'], df['Winner'], df['Result'], df['Cumulative Wins'], df['Win Percent']],
+                    font=dict(color='black')))])
 
     #update table size (defaults declared at top)   
     table.update_layout(width=wide_width, height = table_height)
@@ -432,7 +443,7 @@ def getOneYearRegularSeason(Team, Year, AsHelper = False):
     -------
     Dataframe or plotly table for all games played by team of interest in year of interest during regular season. 
     Dataframe/Table Columns: Dataframe columns: Home Team, Home Team Score, Away Team, Away Team Score, Date, Winner, 
-    Team Winner (Did team of interest win), Cumultive Wins, Win Percentage to date
+    Team Winner (Did team of interest win), Cumulative Wins, Win Percentage to date
 
 
     Called in
@@ -457,10 +468,10 @@ def getOneYearRegularSeason(Team, Year, AsHelper = False):
         df = df.reset_index()    
         df.index = np.arange(1, len(df)+1)
     
-        #Add columns for Team Winner (whether or not team of interest won), Cumultive Wins, and WinPercent (both to date)
+        #Add columns for Team Winner (whether or not team of interest won), Cumulative Wins, and WinPercent (both to date)
         df['Team_Winner'] = df['Winner'] == Team
-        df['Cumultive_Wins'] = df['Team_Winner'].cumsum()
-        df['WinPercent'] = df['Cumultive_Wins']/df.index
+        df['Cumulative_Wins'] = df['Team_Winner'].cumsum()
+        df['WinPercent'] = df['Cumulative_Wins']/df.index
 
         #drop unnessary columns
         df = df.drop(columns = ['index', 'level_0', 'Home_FranID', 'Away_FranID'])
@@ -474,13 +485,17 @@ def getOneYearRegularSeason(Team, Year, AsHelper = False):
 
         #If not being used as a helper function, default is to build and return a table of results
         if AsHelper == False:
+            df = df.rename(columns = {'Home_Team': 'Home Team', 'Home_Team_Score': 'Home Team Score', 'Away_Team': 'Away Team', 'WinPercent': 'Win Percent',
+                            'Away_Team_Score': 'Away Team Score', 'Team_Winner': 'Result', 'Cumulative_Wins':'Cumulative Wins'})
+            df= df.replace({'Result': {True: 'Win', False: 'Loss'}})
+
             table = go.Figure(data=[go.Table(
-                header=dict(values=list(df.columns)),
+                    header=dict(values=list(df.columns),
+                            font=dict(color='black')),
 
-                cells=dict(values=[df.Home_Team, df.Home_Team_Score, df.Away_Team, df.Away_Team_Score,
-                                df.Date, df.Winner, df.Team_Winner, df.Cumultive_Wins, df.WinPercent]))
-
-])
+                    cells=dict(values=[df['Home Team'], df['Home Team Score'], df['Away Team'], df['Away Team Score'],
+                                df['Date'], df['Winner'], df['Result'], df['Cumulative Wins'], df['Win Percent']],
+                            font=dict(color='black')))])
        
             table.update_layout(width=wide_width, height = table_height)
             return table
@@ -506,7 +521,7 @@ def getOneYearPlayoffs(Team, Year, AsHelper = False):
     -------
     Dataframe or plotly table for all games played by team of interest in year of interest during postseason. 
     Dataframe/Table Columns: Dataframe columns: Home Team, Home Team Score, Away Team, Away Team Score, Date, Winner, 
-    Team Winner (Did team of interest win), Cumultive Wins, Win Percentage to date
+    Team Winner (Did team of interest win), Cumulative Wins, Win Percentage to date
 
 
     Called in
@@ -538,8 +553,8 @@ def getOneYearPlayoffs(Team, Year, AsHelper = False):
         playoff_df.index = np.arange(1, len(playoff_df)+1)
     
         playoff_df['Team_Winner'] = playoff_df['Winner'] == Team
-        playoff_df['Cumultive_Wins'] = playoff_df['Team_Winner'].cumsum()
-        playoff_df['WinPercent'] = playoff_df['Cumultive_Wins']/playoff_df.index
+        playoff_df['Cumulative_Wins'] = playoff_df['Team_Winner'].cumsum()
+        playoff_df['WinPercent'] = playoff_df['Cumulative_Wins']/playoff_df.index
 
 
         playoff_df.Date = pd.DatetimeIndex(playoff_df.Date).strftime("%m-%d-%Y")
@@ -558,13 +573,17 @@ def getOneYearPlayoffs(Team, Year, AsHelper = False):
         
 
         if AsHelper == False:
+            playoff_df = playoff_df.rename(columns = {'Home_Team': 'Home Team', 'Home_Team_Score': 'Home Team Score', 'Away_Team': 'Away Team', 'WinPercent': 'Win Percent',
+                            'Away_Team_Score': 'Away Team Score', 'Team_Winner': 'Result', 'Cumulative_Wins':'Cumulative Wins'})
+            playoff_df= playoff_df.replace({'Result': {True: 'Win', False: 'Loss'}})
+
             table = go.Figure(data=[go.Table(
-                header=dict(values=list(playoff_df.columns)),
+                    header=dict(values=list(playoff_df.columns),
+                            font=dict(color='black')),
 
-                cells=dict(values=[playoff_df.Home_Team, playoff_df.Home_Team_Score, playoff_df.Away_Team, playoff_df.Away_Team_Score,
-                                playoff_df.Date, playoff_df.Winner, playoff_df.Team_Winner, playoff_df.Cumultive_Wins, playoff_df.WinPercent]))
-
-])
+                    cells=dict(values=[playoff_df['Home Team'], playoff_df['Home Team Score'], playoff_df['Away Team'], playoff_df['Away Team Score'],
+                                playoff_df['Date'], playoff_df['Winner'], playoff_df['Result'], playoff_df['Cumulative Wins'], playoff_df['Win Percent']],
+                            font=dict(color='black')))])
        
             table.update_layout(width=wide_width, height = table_height)
             return table
@@ -707,8 +726,9 @@ def getBarChart1(Team, Year):
     
     fig1.update_layout(
     template="simple_white",
-    xaxis=dict(title_text="Regular Season Results "),
+    xaxis=dict(title_text="Percent of Games Won/Lost (Left) and Percent of Series Won, Lost, and Tied (Right)"),
     yaxis=dict(title_text="Percent"),
+    title = "Regular Season Results (Percentages)" ,
     barmode="stack",
     width = half_width,
     )
@@ -722,7 +742,7 @@ def getBarChart1(Team, Year):
     for r, c in zip(df2.response.unique(), colors):
         plot_df2 = df2[df2.response == r]
         fig1.add_trace(
-        go.Bar(x=[plot_df2.year, plot_df2.layout], y=plot_df2.cnt, name=r , marker_color=c),
+        go.Bar(x=[plot_df2.year, plot_df2.layout], y=plot_df2.cnt, name=r , marker_color=c) ,
             )
         
 
@@ -765,8 +785,9 @@ def getBarChart2(Team, Year):
     
     fig.update_layout(
     template="simple_white",
-    xaxis=dict(title_text="Regular Season Results "),
+    xaxis=dict(title_text="Number of Games Won/Lost (Left) and Number of Series Won, Lost, and Tied (Right)"),
     yaxis=dict(title_text="Count"),
+    title = "Regular Season Results (Absolute Count)",
     barmode="stack",
     width = half_width,
     )
@@ -804,30 +825,36 @@ def getOneYearPlot(Team, Year):
     df = df.reset_index()    
     df.index = np.arange(1, len(df)+1)        
     df['Team_Winner'] = df['Winner'] == Team
-    df['Cumultive_Wins'] = df['Team_Winner'].cumsum()
-    df['WinPercent'] = df['Cumultive_Wins']/df.index
+    df['Cumulative_Wins'] = df['Team_Winner'].cumsum()
+    df['WinPercent'] = df['Cumulative_Wins']/df.index
     df = df.drop(columns = ['index', 'level_0'])
     
     fig = go.Figure()
     fig.add_trace(go.Scatter(x=df.Date, y=df.WinPercent, mode='lines', name='Win Percent'))
     fig.add_hline(y=0.5, line_color = 'Red')
     fig.update_yaxes(range = [.1,.9], title = 'Win Percentage')
-    fig.update_layout(width = wide_width, height = plot_height)
+    fig.update_layout(width = wide_width, 
+                      height = plot_height, 
+                      title = "Win Percentage by Date")
     return fig
 
 
 #Streamlit Section
 
 #title
-st.title('MLB Series Win/Loss Dashboard by MacKenzye Leroy')
+st.title("Series-ly, You Have to Win Them")
+
+st.subheader("by [MacKenzye Leroy](https://mackenzye-leroy.com)")
 
 sidebar_selectbox = st.sidebar.radio(
-    "Which Widget would you like to use?:",
+    "",
     ("Home", "All-Time Results Visualized",
-    "Season over Season Results",
-     "Single Season Results", "Top/Bottom 10 All Time", 
+    "Season Over Season Results",
+     "Single Season Results", "Top/Bottom 10 All-Time", 
      "Biggest Overachievers and Underachievers")
 )
+
+
 
 
 
@@ -837,14 +864,14 @@ sidebar_selectbox = st.sidebar.radio(
 if sidebar_selectbox == "Home":
 
     #Introduction to whole dashboard
-    st.write("""Welcome! This dashboard is the result of a fairly simple question I wasn't able to find an answer to online- which MLB teams in history won
-                the highest percentage of their regular season series (as opposed to games) and was a higher series win percentage indicative of playoff success?
+    st.write("""Welcome! This dashboard is the result of a fairly simple question I wasn't able to find an answer to online--which MLB teams in history won
+                the highest percentage of their regular season series (as opposed to games), and was a higher series win percentage indicative of playoff success? 
                 When I realized there was no easy source of data to answer this question, I got to work making my own from other sources. I began by scraping the results of 
-                all major league baseball games going back to 1900, cleaned the data up, and then calculated how many series each team played for each season
-                and how many of those they won. If you're interested in my work collecting or cleaning the data, or my more rigorous staistical analysis of whether or
-                not regular series win percentage was indicative of playoff success, check out my website mackenzye-leroy.com, where I cover a lot of that work.
+                all MLB games going back to 1900, cleaned the data up, and then calculated how many series each team played for each season
+                and how many of those they won. If you're interested in my work collecting or cleaning the data, or my more rigorous statistical analysis of whether or
+                not regular series win percentage was indicative of playoff success, check out my website [mackenzye-leroy.com](https://mackenzye-leroy.com), where I cover a lot of that work.
                 If you're simply interested in playing around with some of the results, you're in the right place! Use the navigation bar on the left to navigate 
-                to different widgets I built with the data. Each one is briefly described below:
+                to different widgets I built with the data. Each one is briefly described below.
                 """)
 
 
@@ -853,59 +880,49 @@ if sidebar_selectbox == "Home":
     st.write("""
             This widget plots the winning percentage and series winning percentage of all teams since 1900, as well as which teams made the playoffs and won 
             the World Series. You can filter by year, team, whether or not a team made the playoffs, and whether or not a team won the World Series. Click 
-            "All-Time Results Visualized" in the naviagtion bar on the left to learn more!
+            "All-Time Results Visualized" in the navigation bar on the left to learn more!
             """)
 
-    st.subheader('Season over Season Results')
+    st.subheader('Season Over Season Results')
 
     st.write("""
-            This widget allows you to look up the year over year results for any major league team in baseball history within a selected range.
-            Click "Season over Season Results" in the naviagtion bar on the left to learn more!
+            This widget allows you to look up the year-over-year results for any Major League team in baseball history from 1900 to 2021. 
+            Click "Season Over Season Results" in the navigation bar on the left to learn more!
             """)
 
     st.subheader('Single Season Results')
 
     st.write("""
             This widget allows you to look up a single season of game results for any given team in Major League Baseball history.
-            Click "Single Season Results" in the naviagtion bar on the left to learn more!
+            Click "Single Season Results" in the navigation bar on the left to learn more!
             """)
 
-    st.subheader('Top/Bottom 10 All Time')
+    st.subheader('Top/Bottom 10 All-Time')
 
     st.write("""
             This widget allows you to check out the best and worst teams in MLB history in terms of regular season win percentage. 
-            Click "Top/Bottom 10 All Time" in the naviagtion bar on the left to learn more!
+            Click "Top/Bottom 10 All-Time" in the navigation bar on the left to learn more!
             """)
 
     st.subheader('Biggest Overachievers and Underachievers')
 
     st.write("""
             This widget allows you to check out which teams have most overperformed and underperformed their win/loss record in terms of 
-            series win percentage. Click "Biggest Overachievers and Underachievers" in the naviagtion bar on the left to learn more!
+            series win percentage. Click "Biggest Overachievers and Underachievers" in the navigation bar on the left to learn more!
             """)
 
 
 elif sidebar_selectbox == "All-Time Results Visualized":
 
-    st.write("""The following graphic shows the regular season win percentage versus the regular season series win percentage of all MLB teams going back to 1900. 
-    Teams colored in red made the postseason, and teams represented as diamonds, won the World Series. Teams further to the right won a higher percentage of their 
-    regular season games and teams higher up won a higher percentage of their regular season series. Obviously those values are highly correlated (a team can't 
-    win a lot of series without winning a lot of games), but there are still some interesting outliers. For example, the 1947 New York Yankees won over 63 percent 
-    of their games and won the World Series, but only about 47 percent of their regular season series. If you're interested in more outliers check out the "Biggest 
-    Overachiervers/Underachievers" tab on the left. We also see that while many World Series winning teams had both high win percentages and series 
-    win percentages, plenty of teams with only slightly above average win percentages and series win percentages won the World Series. You can use the slider 
-    below to filter years of interest and the box below to filter teams.
-    \n
     
-    Note: Results here include all teams since 1900 including some teams that have changed names, and some teams that no longer exist. If you're interest in learning 
-    more about some of these historical teams, check out the "Season over Season Results" Tab on the left then the "Single Season Results" Tab.
-    """)
 
 
     
-    teams_default = st.radio("Clear/Select All:", ('Select All Teams', 'Clear All Teams'))
+    teams_default = st.radio("Clear/Select Teams:", ('Select Current Teams', 'Select All Teams', 'Clear All Teams'))
 
-    if teams_default == 'Select All Teams':
+    if teams_default == 'Select Current Teams':
+        teams_default_result = current_teams
+    elif teams_default == 'Select All Teams':
         teams_default_result = all_teams
     
     elif teams_default == 'Clear All Teams':
@@ -917,34 +934,64 @@ elif sidebar_selectbox == "All-Time Results Visualized":
 
     year_slider = st.slider("Years of Interest:", 1900, 2021, value=[1900, 2021])
 
-
+    
     filteredResults = MasterYearlyResultsWithPlayoffs[MasterYearlyResultsWithPlayoffs['Year'] > year_slider[0]]
+    
+    WSIndex = filteredResults[filteredResults.WonWorldSeries == True]['MadePostSeason'].index
+    filteredResults['MadePostSeason'] = filteredResults['MadePostSeason'] .astype('string')
+
+    for x in WSIndex:
+        filteredResults.at[x, 'MadePostSeason'] = 'True and Won World Series'
+
     filteredResults = filteredResults[filteredResults['Year']<year_slider[1]]
     filteredResults = filteredResults[filteredResults['Team'].isin(team_input)]
+    filteredResults["WinPercent"] = filteredResults["WinPercent"].round(decimals = 3)
+    filteredResults["SeriesWinPercent"] = filteredResults["SeriesWinPercent"].round(decimals = 3)
+    filteredResults = filteredResults.rename(columns = {'MadePostSeason': 'Made Postseason?', 'WinPercent': 'Win Percent', 'SeriesWinPercent': 'Series Win Percent'})
 
+    symbols = ['circle', 'diamond', 'star']
+    color_sequence = ['#636EFA', '#EECA3B', '#EF553B']
 
-    fig = px.scatter(filteredResults, x="WinPercent", y="SeriesWinPercent", color = "MadePostSeason", symbol ="WonWorldSeries" , width = 1200, height =850,
+    fig = px.scatter(filteredResults, x="Win Percent", y="Series Win Percent", color = "Made Postseason?", symbol = 'Made Postseason?',
+                    width = 1200, height =850,
+                    symbol_sequence = symbols,
+                    color_discrete_sequence = color_sequence,
                     hover_data=["Team", "Year"])
 
     st.plotly_chart(fig)
 
+    st.write("""
+    The above graphic shows the regular season win percentage versus the regular season series win percentage of all MLB teams going back to 1900. 
+    Teams represented as red diamonds made the postseason, and teams represented as gold stars won the World Series. Teams further to the right won a higher percentage of their 
+    regular season games and teams higher up won a higher percentage of their regular season series. Obviously, those values are highly correlated (a team can't 
+    win a lot of series without winning a lot of games), but there are still some interesting outliers. For example, the 1947 New York Yankees won over 63 percent
+    of their games and ultimately won the World Series, but only about 47 percent of their regular season series. If you're interested in more outliers check out the "Biggest 
+    Overachievers and Underachievers" tab on the left. We also see that while many World Series winning teams had both high win percentages and series 
+    win percentages, plenty of teams with only slightly above average win percentages and series win percentages won the World Series. You can use the slider 
+    above to filter years of interest and the box above to filter teams.
+    \n
+    
+    Note: Results here include all teams since 1900 including some teams that have changed names, and some teams that no longer exist. If you're interested in learning 
+    more about some of these historical teams, check out the "Season Over Season Results" tab on the left then the "Single Season Results" tab.
+    """)
+
     
 
 
-elif sidebar_selectbox == 'Season over Season Results':
+elif sidebar_selectbox == 'Season Over Season Results':
 
     #Title of Top Section
-    st.subheader('Season over Season Results')
+    st.subheader('Season Over Season Results')
 
     #Intro to top section
-    st.write("""This widget allows you to look up the year over year results for any major league team in baseball history within a selected range.
+    st.write("""This widget allows you to look up the year-over-year results for any Major League team in baseball history within a selected range.
             A table with the results as well as a plot showing the team's win percentage and series win percentage during the span selected 
             will be automatically generated. You can also choose whether or not to include historical teams that may fall under this team's name. 
             For example, the New York Yankees are probably the most well-known team in baseball history. What many don't know though is that 
             they were originally founded as the Baltimore Orioles in 1901 and then changed names to the New York Highlanders from 1904 until
             1913 before ultimately landing on the world famous New York Yankees. Use the first dropdown to select whether or not you want to 
-            included these historical results or not. You can also explore the results of the short-lived federation league, 
-            which existed from 1913-1914 by selecting "Federation League Teams." 
+            include these historical results or not. You can also explore the results of the short-lived Federation League, 
+            which existed from 1914-1915 by selecting "Federation League Teams." 
             """)
 
     #Team type dropdown
@@ -1002,9 +1049,9 @@ elif sidebar_selectbox == 'Single Season Results':
     st.subheader('Single Season Results')
 
     #Introduction
-    st.write("""This widget allows you to look up a single season of game results for any given team in Major League Baseball history. By default the full regular season and playoff 
-                schedule/results are returned as well as several plots. The first plot shows the win percetnage of the team of interest over the course of the season. 
-                The plot below on the left shows final win and loss percentage of the team in the year given as well as their final series win, loss, and tie percentage. 
+    st.write("""This widget allows you to look up a single season of game results for any given team in Major League Baseball history. By default, the full regular season and playoff 
+                schedule/results are returned as well as several plots. The first plot shows the win percentage of the team of interest over the course of the season. 
+                The plot below on the left shows final win and loss percentage of the team in the given year as well as their final series win, loss, and tie percentage. 
                 The final plot shows the final absolute count of wins and losses as well as series wins, ties, and losses for the season selected. If you are only interested 
                 in playoff or regular season results, you can use the drop down below to select those. If you're only interested in the table of results or the plots, you
                 can disable one or both of them with the checkboxes below. 
@@ -1020,7 +1067,7 @@ elif sidebar_selectbox == 'Single Season Results':
     plots_2 = st.checkbox('Include plots?', value = True)
 
     #Include Table of results? Default is True
-    results_2 = st.checkbox('Include Game Results?', value = True)
+    results_2 = st.checkbox('Include game results?', value = True)
 
     #Select Team
     Team_option_2 = st.selectbox(
@@ -1067,12 +1114,12 @@ elif sidebar_selectbox == 'Single Season Results':
         else:
             worldseries_sentence =f"but were eliminated by the {record[3]}."
     else:
-        playoff_sentence = 'did not qualify for the postseason'
-        worldseries_sentence = '.'
+        playoff_sentence = 'did not qualify for the postseason.'
+        worldseries_sentence = ''
 
 
-    #Write result strong
-    Info = f"In {year_option} the {Team_option_2} won {record[0]} games and lost {record[1]} for an overall win percentage of {record[2]}. They {playoff_sentence} {worldseries_sentence}"
+    #Write result string
+    Info = f"In {year_option}, the {Team_option_2} won {record[0]} games and lost {record[1]} for an overall win percentage of {record[2]}. They {playoff_sentence} {worldseries_sentence}"
 
     #Return result string
     st.subheader(Info)
@@ -1094,46 +1141,77 @@ elif sidebar_selectbox == 'Single Season Results':
             st.plotly_chart(section_two_result)
 
 
-elif sidebar_selectbox == "Top/Bottom 10 All Time":
+elif sidebar_selectbox == "Top/Bottom 10 All-Time":
 
     st.write("""Since this project started with the simple question of which teams in baseball won the highest percentage of their regular season series,
     it seems right to dedicate a section to those teams. The top table below shows the top 10 teams in MLB history in terms of series win percentage and 
     the bottom chart shows the bottom 10 (the teams with the worst series win percentages in MLB history). If you're interested in learning more about
-    one or more of these incrredbile (or pitiful) seasons, be sure to make a note of the team name and year then head over to the "Singe Season Results" tab, 
+    one or more of these incredible (or pitiful) seasons, be sure to make a note of the team name and year then head over to the "Singe Season Results" tab, 
     where you can look up those respective seasons and learn more.""")
 
-    st.subheader('Top 10 All Time')
+    st.subheader('Top 10 All-Time')
 
-    st.table(MasterYearlyResultsWithPlayoffs.sort_values(by = ['SeriesWinPercent'], ascending = False).head(10))
+    top10 = MasterYearlyResultsWithPlayoffs.sort_values(by = ['SeriesWinPercent'], ascending = False).head(10)
+    top10 = top10.drop(columns = ['Unnamed: 0', 'LossPercent', 'SeriesLossPercent', 'SeriesTiePercent', 'LossDifference', 'FranID', 'Difference'])
+    top10 = top10.rename(columns = {'NumberOfGames': 'Number Of Games', 'NumberOfSeries': 'Number Of Series', 'SeriesWins': 'Series Wins', 
+                                                        'SeriesLosses': 'Series Losses', 'SeriesTies': 'Series Ties', 'WinPercent': 'Win Percent', 
+                                                        'SeriesWinPercent': 'Series Win Percent', 'MadePostSeason': 'Made Postseason?', 'WonWorldSeries': 'Won World Series?'})
+    top10 = top10.reset_index(drop=True)
+    top10.index = np.arange(1,len(top10)+1)
 
-    st.subheader('Bottom 10 All Time')
 
-    st.table(MasterYearlyResultsWithPlayoffs.sort_values(by = ['SeriesWinPercent']).head(10))
+    st.table(top10)
+
+    st.subheader('Bottom 10 All-Time')
+
+    bottom10 = MasterYearlyResultsWithPlayoffs.sort_values(by = ['SeriesWinPercent'], ascending = True).head(10)
+    bottom10 = bottom10.drop(columns = ['Unnamed: 0', 'LossPercent', 'SeriesLossPercent', 'SeriesTiePercent', 'LossDifference', 'FranID', 'Difference'])
+    bottom10= bottom10.rename(columns = {'NumberOfGames': 'Number Of Games', 'NumberOfSeries': 'Number Of Series', 'SeriesWins': 'Series Wins', 
+                                                        'SeriesLosses': 'Series Losses', 'SeriesTies': 'Series Ties', 'WinPercent': 'Win Percent', 
+                                                        'SeriesWinPercent': 'Series Win Percent', 'MadePostSeason': 'Made Postseason?', 'WonWorldSeries': 'Won World Series?'})
+    bottom10 = bottom10.reset_index(drop=True)
+    bottom10.index = np.arange(1,len(bottom10)+1)
+
+    st.table(bottom10)
 
 elif sidebar_selectbox == 'Biggest Overachievers and Underachievers':
 
-    st.write("""The following charts are all about outliers or teams that had unusually large differences in their win regular season percentages and their regular 
-    season series win percentages. I classified an overachiever as a team that won a higher percentage of their regular season series than their regular season games. 
-    In all of MLB history, there have only been 172 such teams (out of over 2500 total teams!) Among that already select group, the top chart shows the 10 teams with 
-    the biggest differences in series win percentage and win percentage, or the teams I've crowned the biggest overachievers. These teams were abnormally good at winning 
-    regular games series given thier overall record. On the flip side, the bottom chart shows the 10 teams in MLB history with the largest difference in win percentage 
-    and series win percenatge in the other direction-teams that won a much higher percentage of their games than their series. If you're interested in learning more about
+    st.write("""The following charts are all about outliers or teams that had unusually large differences in their  win percentages and their 
+    series win percentages (regular season). I classified an overachiever as a team that won a higher percentage of their regular season series than their regular season games. 
+    In all of MLB history, there have only been 172 such teams (out of over 2500 total teams!). Among that already select group, the top chart below shows the 10 teams with 
+    the biggest differences in series win percentage and win percentage. I've crowned these teams as the biggest overachievers in MLB history. These teams were abnormally good at winning 
+    series given their overall record. On the flip side, the bottom chart shows the 10 teams in MLB history with the largest difference in win percentage 
+    and series win percenatge in the other direction--teams that won a much higher percentage of their games than their series. If you're interested in learning more about
     one or more of these unusual seasons, be sure to make a note of the team name and year then head over to the "Singe Season Results" tab, where you can look up those
     respective seasons and learn more.""")
 
-    st.subheader('Biggest Overachiervers')
+    st.subheader('Biggest Overachievers')
 
-    st.table(MasterYearlyResultsWithPlayoffs.sort_values(by = ['Difference'], ascending = False).head(10))
+    overAchievers = MasterYearlyResultsWithPlayoffs.sort_values(by = ['Difference'], ascending = False).head(10)
+    overAchievers = overAchievers.drop(columns = ['Unnamed: 0', 'LossPercent', 'SeriesLossPercent', 'SeriesTiePercent', 'LossDifference', 'FranID'])
+    overAchievers = overAchievers.rename(columns = {'NumberOfGames': 'Number Of Games', 'NumberOfSeries': 'Number Of Series', 'SeriesWins': 'Series Wins', 
+                                                        'SeriesLosses': 'Series Losses', 'SeriesTies': 'Series Ties', 'WinPercent': 'Win Percent', 
+                                                        'SeriesWinPercent': 'Series Win Percent', 'MadePostSeason': 'Made Postseason?', 'WonWorldSeries': 'Won World Series?'})
+    overAchievers = overAchievers.reset_index(drop=True)
+    overAchievers.index = np.arange(1,len(overAchievers)+1)
+    st.table(overAchievers)
 
-    st.subheader('Worst Underachiervers')
+    st.subheader('Biggest Underachievers')
 
-    st.table(MasterYearlyResultsWithPlayoffs.sort_values(by = ['Difference']).head(10))
+    underAchievers = MasterYearlyResultsWithPlayoffs.sort_values(by = ['Difference'], ascending = True).head(10)
+    underAchievers = underAchievers.drop(columns = ['Unnamed: 0', 'LossPercent', 'SeriesLossPercent', 'SeriesTiePercent', 'LossDifference', 'FranID'])
+    underAchievers = underAchievers.rename(columns = {'NumberOfGames': 'Number Of Games', 'NumberOfSeries': 'Number Of Series', 'SeriesWins': 'Series Wins', 
+                                                        'SeriesLosses': 'Series Losses', 'SeriesTies': 'Series Ties', 'WinPercent': 'Win Percent', 
+                                                        'SeriesWinPercent': 'Series Win Percent', 'MadePostSeason': 'Made Postseason?', 'WonWorldSeries': 'Won World Series?'})
+    underAchievers = underAchievers.reset_index(drop=True)
+    underAchievers.index = np.arange(1,len(underAchievers)+1)
+    st.table(underAchievers)
 
 
 
 #final contact note
 st.write('')
-st.write('Have a question? Reach out to me! You can find contact info on my website (mackenzye-leroy.com)')
+st.write('Have a question? Reach out to me! You can find contact info on my website [mackenzye-leroy.com](https://mackenzye-leroy.com)')
 
 
 
