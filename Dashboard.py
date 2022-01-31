@@ -219,16 +219,17 @@ def getTeamAndYears(Team, start_year = None, end_year = None, historical_results
     if historical_results:
         FranID = teams_ID_dictionary[Team]
     
-        TeamInQuotes= "'" + FranID + "'"
-        query = "FranID == " + TeamInQuotes
+        #TeamInQuotes= "'" + FranID + "'"
+        query = f"FranID == '{FranID}'"
         Results = MasterYearlyResults.query(query)
         Results = Results.sort_values(by = 'Year')
 
     #If not including historical results, we can query for just the exact team name provided
     else:
         
-        TeamInQuotes= "'" + Team + "'"
-        query = "Team == " + TeamInQuotes
+        #TeamInQuotes= "'" + Team + "'"
+        #query = "Team == " + TeamInQuotes
+        query = f"Team == '{Team}'"
         Results = MasterYearlyResults.query(query)
 
     #If no start_year provided, default to minumum
@@ -353,16 +354,19 @@ def getSeasonHelperFunction(Team, Year):
 
 
     #Set up query string for team of interest
-    TeamInQuotes= "'" + Team + "'"
-    query1 = "Home_Team == " + TeamInQuotes + " | Away_Team == " + TeamInQuotes
+    #TeamInQuotes= "'" + Team + "'"
+    #query1 = "Home_Team == " + TeamInQuotes + " | Away_Team == " + TeamInQuotes
+    query1 = f"Home_Team == '{Team}'  | Away_Team == '{Team}'"
 
     #query workingdf for all games matching team of interest
     df1 = workingdf.query(query1)
     df1 = df1.reset_index()
 
     #filter dataframe
-    query2 = "Season == " + str(Year)
+    #query2 = "Season == " + str(Year)
+    query2 = f"Season == {str(Year)}"
     df1 = df1.query(query2)
+
     
     #return resulting dataframe
     return df1
@@ -671,8 +675,10 @@ def getRecord(Team, Year):
     """
 
 
-    TeamInQuotes= "'" + Team + "'"
-    query = "Team == " + TeamInQuotes
+    #TeamInQuotes= "'" + Team + "'"
+    #query = "Team == " + TeamInQuotes
+    query = f"Team == '{Team}'"
+
     Results = MasterYearlyResults.query(query)
     Results = Results[Results.Year == Year]
     Wins = Results.Wins.iloc[0]
@@ -839,13 +845,15 @@ def getOneYearPlot(Team, Year):
     return fig
 
 
-#Streamlit Section
+#######  ----------Streamlit Section----------------- ########
 
-#title
+#title for whole page
 st.title("Series-ly, You Have to Win Them")
 
+#subheader for whole page
 st.subheader("by [MacKenzye Leroy](https://mackenzye-leroy.com)")
 
+##sidebar. Depending on choice, depends what is displayed
 sidebar_selectbox = st.sidebar.radio(
     "",
     ("Home", "All-Time Results Visualized",
@@ -858,7 +866,7 @@ sidebar_selectbox = st.sidebar.radio(
 
 
 
-#Home page:
+#### Home page:
 
 
 if sidebar_selectbox == "Home":
@@ -875,6 +883,7 @@ if sidebar_selectbox == "Home":
                 """)
 
 
+    #Other dashboard otpions explained
     st.subheader('All-Time Results Visualized')
 
     st.write("""
@@ -912,11 +921,12 @@ if sidebar_selectbox == "Home":
             """)
 
 
+
+#### All Time Results Visualized:
+
 elif sidebar_selectbox == "All-Time Results Visualized":
 
-    
-
-
+    #Option for selcting all teams, selecting all current teams (default), or clearing all teams
     
     teams_default = st.radio("Clear/Select Teams:", ('Select Current Teams', 'Select All Teams', 'Clear All Teams'))
 
@@ -928,29 +938,40 @@ elif sidebar_selectbox == "All-Time Results Visualized":
     elif teams_default == 'Clear All Teams':
         teams_default_result = None
 
-    
+    #Team Select
         
     team_input = st.multiselect("Teams", options = all_teams, default = teams_default_result)
 
+    #year select
     year_slider = st.slider("Years of Interest:", 1900, 2021, value=[1900, 2021])
 
-    
-    filteredResults = MasterYearlyResultsWithPlayoffs[MasterYearlyResultsWithPlayoffs['Year'] > year_slider[0]]
-    
-    WSIndex = filteredResults[filteredResults.WonWorldSeries == True]['MadePostSeason'].index
-    filteredResults['MadePostSeason'] = filteredResults['MadePostSeason'] .astype('string')
 
+    #filter by year
+    filteredResults = MasterYearlyResultsWithPlayoffs[MasterYearlyResultsWithPlayoffs['Year'] > year_slider[0]]
+    filteredResults = filteredResults[filteredResults['Year']<year_slider[1]]
+
+    #filter by team
+    filteredResults = filteredResults[filteredResults['Team'].isin(team_input)]
+    
+    #differntiate by teams that made post season and were eliminated vs won world series (makes visual clearer)
+    WSIndex = filteredResults[filteredResults.WonWorldSeries == True]['MadePostSeason'].index
+    filteredResults['MadePostSeason'] = filteredResults['MadePostSeason'].astype('string')
     for x in WSIndex:
         filteredResults.at[x, 'MadePostSeason'] = 'True and Won World Series'
 
-    filteredResults = filteredResults[filteredResults['Year']<year_slider[1]]
-    filteredResults = filteredResults[filteredResults['Team'].isin(team_input)]
+    
+    #Round percentages for better presentation
     filteredResults["WinPercent"] = filteredResults["WinPercent"].round(decimals = 3)
     filteredResults["SeriesWinPercent"] = filteredResults["SeriesWinPercent"].round(decimals = 3)
+
+    #rename columns for presentations
     filteredResults = filteredResults.rename(columns = {'MadePostSeason': 'Made Postseason?', 'WinPercent': 'Win Percent', 'SeriesWinPercent': 'Series Win Percent'})
 
+    #select symbols and colors for visualization
     symbols = ['circle', 'diamond', 'star']
     color_sequence = ['#636EFA', '#EECA3B', '#EF553B']
+
+    #Create Visual
 
     fig = px.scatter(filteredResults, x="Win Percent", y="Series Win Percent", color = "Made Postseason?", symbol = 'Made Postseason?',
                     width = 1200, height =850,
@@ -960,6 +981,7 @@ elif sidebar_selectbox == "All-Time Results Visualized":
 
     st.plotly_chart(fig)
 
+    #Explanation
     st.write("""
     The above graphic shows the regular season win percentage versus the regular season series win percentage of all MLB teams going back to 1900. 
     Teams represented as red diamonds made the postseason, and teams represented as gold stars won the World Series. Teams further to the right won a higher percentage of their 
@@ -1151,6 +1173,7 @@ elif sidebar_selectbox == "Top/Bottom 10 All-Time":
 
     st.subheader('Top 10 All-Time')
 
+    #get top 10 in Series Win Percentage, drop unneccessary columns, rename colunms for better presentation, and set index to 1-10
     top10 = MasterYearlyResultsWithPlayoffs.sort_values(by = ['SeriesWinPercent'], ascending = False).head(10)
     top10 = top10.drop(columns = ['Unnamed: 0', 'LossPercent', 'SeriesLossPercent', 'SeriesTiePercent', 'LossDifference', 'FranID', 'Difference'])
     top10 = top10.rename(columns = {'NumberOfGames': 'Number Of Games', 'NumberOfSeries': 'Number Of Series', 'SeriesWins': 'Series Wins', 
@@ -1160,10 +1183,12 @@ elif sidebar_selectbox == "Top/Bottom 10 All-Time":
     top10.index = np.arange(1,len(top10)+1)
 
 
+    #return table
     st.table(top10)
 
     st.subheader('Bottom 10 All-Time')
 
+    #get bottom 10 in Series Win Percentage, drop unneccessary columns, rename colunms for better presentation, and set index to 1-10
     bottom10 = MasterYearlyResultsWithPlayoffs.sort_values(by = ['SeriesWinPercent'], ascending = True).head(10)
     bottom10 = bottom10.drop(columns = ['Unnamed: 0', 'LossPercent', 'SeriesLossPercent', 'SeriesTiePercent', 'LossDifference', 'FranID', 'Difference'])
     bottom10= bottom10.rename(columns = {'NumberOfGames': 'Number Of Games', 'NumberOfSeries': 'Number Of Series', 'SeriesWins': 'Series Wins', 
@@ -1172,6 +1197,7 @@ elif sidebar_selectbox == "Top/Bottom 10 All-Time":
     bottom10 = bottom10.reset_index(drop=True)
     bottom10.index = np.arange(1,len(bottom10)+1)
 
+    #return table
     st.table(bottom10)
 
 elif sidebar_selectbox == 'Biggest Overachievers and Underachievers':
@@ -1187,6 +1213,7 @@ elif sidebar_selectbox == 'Biggest Overachievers and Underachievers':
 
     st.subheader('Biggest Overachievers')
 
+    #get top 10 in terms of difference, drop unneccessary columns, rename colunms for better presentation, and set index to 1-10
     overAchievers = MasterYearlyResultsWithPlayoffs.sort_values(by = ['Difference'], ascending = False).head(10)
     overAchievers = overAchievers.drop(columns = ['Unnamed: 0', 'LossPercent', 'SeriesLossPercent', 'SeriesTiePercent', 'LossDifference', 'FranID'])
     overAchievers = overAchievers.rename(columns = {'NumberOfGames': 'Number Of Games', 'NumberOfSeries': 'Number Of Series', 'SeriesWins': 'Series Wins', 
@@ -1194,10 +1221,11 @@ elif sidebar_selectbox == 'Biggest Overachievers and Underachievers':
                                                         'SeriesWinPercent': 'Series Win Percent', 'MadePostSeason': 'Made Postseason?', 'WonWorldSeries': 'Won World Series?'})
     overAchievers = overAchievers.reset_index(drop=True)
     overAchievers.index = np.arange(1,len(overAchievers)+1)
+    #return table
     st.table(overAchievers)
 
     st.subheader('Biggest Underachievers')
-
+    #get bottom 10 in terms of difference, drop unneccessary columns, rename colunms for better presentation, and set index to 1-10
     underAchievers = MasterYearlyResultsWithPlayoffs.sort_values(by = ['Difference'], ascending = True).head(10)
     underAchievers = underAchievers.drop(columns = ['Unnamed: 0', 'LossPercent', 'SeriesLossPercent', 'SeriesTiePercent', 'LossDifference', 'FranID'])
     underAchievers = underAchievers.rename(columns = {'NumberOfGames': 'Number Of Games', 'NumberOfSeries': 'Number Of Series', 'SeriesWins': 'Series Wins', 
@@ -1205,6 +1233,7 @@ elif sidebar_selectbox == 'Biggest Overachievers and Underachievers':
                                                         'SeriesWinPercent': 'Series Win Percent', 'MadePostSeason': 'Made Postseason?', 'WonWorldSeries': 'Won World Series?'})
     underAchievers = underAchievers.reset_index(drop=True)
     underAchievers.index = np.arange(1,len(underAchievers)+1)
+    #return table
     st.table(underAchievers)
 
 
