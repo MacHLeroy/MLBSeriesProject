@@ -7,17 +7,17 @@ This project started with what I thought would be a fairly simple question to an
 fter scraping the results of every baseball game going back to 1900 and figuring out every teams' regular series win percentage (see project below for more information), I wanted to build a simple way to share the data I had compiled with the world. To me, the clearest way to share data is to make it fun and easy to visualize, so I used streamlit to build an interactive dashboard. I then deployed said dashboard on AWS. 
 
 **Python Scripts:**
-Dashboard.py - the file for the actual dashboard. Build on Streamlit, can be deployed locally with -streamlit run Dashboard.py provided all dependencies (including streamlit) have been downloaded and all required files are in working directory (YearlyResultsMaster.csv, LeagueGameResults.csv, PostSeasonStartDates.csv, MasterYearlyResultsWithPlayoffs.csv)
+* Dashboard.py - the file for the actual dashboard. Build on Streamlit, can be deployed locally with -streamlit run Dashboard.py provided all dependencies (including streamlit) have been downloaded and all required files are in working directory (YearlyResultsMaster.csv, LeagueGameResults.csv, PostSeasonStartDates.csv, MasterYearlyResultsWithPlayoffs.csv)
 
 **CSV Files:**
 
-YearlyResultsMaster.csv =  Contains Season Results (Wins, Losses, Series Wins, Series Losses, Series Ties) for all major league teams going back to 1900
+* YearlyResultsMaster.csv =  Contains Season Results (Wins, Losses, Series Wins, Series Losses, Series Ties) for all major league teams going back to 1900
 
-LeagueGameResults.csv = Contains the individual game results for all major league baseball games played since 1900
+* LeagueGameResults.csv = Contains the individual game results for all major league baseball games played since 1900
 
-PostSeasonStartDates.csv = Contains the year and postseason start date for each MLB season
+* PostSeasonStartDates.csv = Contains the year and postseason start date for each MLB season
 
-MasterYearlyResultsWithPlayoffs.csv = Similar to YearlyResultsMaster but includes playoff results as well. 
+* MasterYearlyResultsWithPlayoffs.csv = Similar to YearlyResultsMaster but includes playoff results as well. 
 
 **Notebooks:**
 These notebooks were used to actually scrape the games from baseballreference and compile the data. Many are working notebooks not in great presentation condition. For a cleaned/compiled version that shows the final thotught process/data generation see the following link: https://colab.research.google.com/drive/199UbuzfVVwhwmNZfiqkorwq0hcC59r57 
